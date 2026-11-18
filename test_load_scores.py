@@ -1,0 +1,35 @@
+import pytest
+from load_scores import load_scores
+
+def test_정상_파일을_읽는다():
+    kept, skipped = load_scores("scores.csv")
+    assert len(kept) == 5
+
+# def test_일부러_틀린_테스트():
+#     kept, skipped = load_scores("scores.csv")
+#     assert len(kept) == 99
+
+def test_없는_파일이면_오류가_난다():
+    with pytest.raises(FileNotFoundError):
+        load_scores("없는파일.csv")
+
+def test_헤더만_있으면_빈_결과가_나온다():
+    kept, skipped = load_scores("empty.csv")
+    assert kept == []
+    assert skipped == []
+
+@pytest.mark.parametrize("점수, 유효한가", [
+    (-1,  False),   # 경계 바로 아래
+    (0,   True),    # ★ 아래쪽 경계
+    (1,   True),
+    (99,  True),
+    (100, True),    # ★ 위쪽 경계
+    (101, False),   # 경계 바로 위
+])
+def test_점수_경계값(점수, 유효한가):
+    # PPT 14페이지의 쓰기 의사코드를 실제 파일 생성 코드로 구현한 부분입니다.
+    with open("임시.csv", "w", encoding="utf-8") as f:
+        f.write(f"name,score\n홍길동,{점수}\n")
+        
+    kept, skipped = load_scores("임시.csv")
+    assert (len(kept) == 1) == 유효한가
